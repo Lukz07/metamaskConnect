@@ -1,33 +1,62 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect, useState } from 'react'
+import { Button } from './stories/Button';
 import './App.css'
 
+import detectEthereumProvider from '@metamask/detect-provider';
+
+const provider = await detectEthereumProvider();
+
+const startApp = (provider, setWallet) => {
+  if (provider !== window.ethereum) {
+    console.error('Do you have multiple wallets installed?');
+    setWallet('Do you have multiple wallets installed?')
+  }
+}
+
+const validateProvider = (setWallet) => {
+  if (provider) {
+    startApp(provider, setWallet);
+  } else {
+    console.log('Please install MetaMask!');
+    setWallet('Please install MetaMask!');
+  }
+}
+
+const connectAccount = async (setWallet) => {
+  const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+    .catch((err) => {
+      if (err.code === 4001) {
+        console.log('Please connect to MetaMask.');
+      } else {
+        console.error(err);
+      }
+    });
+
+  const account = accounts[0];
+  setWallet(account);
+}
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [wallet, setWallet] = useState(null)
+
+  useEffect(() => {
+    validateProvider(setWallet);
+  }, []);
 
   return (
     <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
+        <Button 
+          label="Connect Metamask wallet"
+          primary={true}
+          size="large"
+          onClick={() => connectAccount(setWallet)}
+          backgroundColor="#ff6c01"
+          />
         <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
+          Wallet connection state: <code>{wallet}</code>
         </p>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </div>
   )
 }
